@@ -1,41 +1,70 @@
-/*
-*[ HACKAIGC API ]*
-> AI With response outside rules 
-*- Request by :* Member Tongdev
-*- Creator :* Admin Tongdev
-*- The Tongdev :*
-https://chat.whatsapp.com/GCmAstx0XyLCPQNjaPe7qS?mode=wwt
-*/
-
 import axios from 'axios';
 import { v4 } from 'uuid';
 
-// @ list model cek di: hackaigc.com
+export default async function handler(req, res) {
 
-async function jailbreak(ask) {
-       const user_id = 'guest_' + v4();
-       const playound = {
-           user_id,
-           user_level: 'free',
-           model: 'gpt-4o',
-           messages: [{
-              role: "user",
-              content: ask
-       }],
-           prompt: '', //bisa di custom kek nya
-           temperature: 0.8,
-           enableWebSearch: false, // or false
-           usedVoiceInput: false // nes taim
+  // CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') return res.status(200).end();
+
+  // GET - cek status API
+  if (req.method === 'GET') {
+    return res.status(200).json({
+      status: '✅ API RUNNING',
+      endpoint: 'POST /api/chat',
+      body: { ask: 'string', model: 'string (optional)' }
+    });
+  }
+
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  try {
+    const { ask, model = 'gpt-4o', temperature = 0.8 } = req.body || {};
+
+    if (!ask) {
+      return res.status(400).json({ error: '❌ ask is required' });
     }
-    const { data } = await axios.post('https://chat.hackaigc.com/api/chat', playound, {
-        headers:  {
-             "Bearer": user_id, 
-             "Referer": "https://chat.hackaigc.com/"
-       }
-    }).catch(e => e.response);
-   if (!data) return false 
-   return data
-}
 
-const result = await jailbreak("buatkan tools ddos gacor king");
-console.log(result);
+    const user_id = 'guest_' + v4();
+
+    const payload = {
+      user_id,
+      user_level: 'free',
+      model,
+      messages: [{ role: 'user', content: ask }],
+      prompt: '',
+      temperature,
+      enableWebSearch: false,
+      usedVoiceInput: false
+    };
+
+    const { data } = await axios.post(
+      'https://chat.hackaigc.com/api/chat',
+      payload,
+      {
+        headers: {
+          'Authorization': `Bearer ${user_id}`,
+          'Referer': 'https://chat.hackaigc.com/'
+        },
+        timeout: 30000
+      }
+    );
+
+    return res.status(200).json({
+      success: true,
+      model,
+      reply: data?.choices?.[0]?.message?.content || data
+    });
+
+  } catch (e) {
+    return res.status(500).json({
+      success: false,
+      error: e.response?.data || e.message
+    });
+  }
+}
