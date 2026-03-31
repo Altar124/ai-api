@@ -1,6 +1,3 @@
-import axios from 'axios';
-import { v4 } from 'uuid';
-
 export default async function handler(req, res) {
 
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -32,7 +29,8 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: '❌ Parameter ask wajib diisi' });
     }
 
-    const user_id = 'guest_' + v4();
+    // ✅ Pakai crypto bawaan Node.js, tidak perlu import
+    const user_id = 'guest_' + crypto.randomUUID();
 
     const payload = {
       user_id,
@@ -45,18 +43,18 @@ export default async function handler(req, res) {
       usedVoiceInput: false
     };
 
-    const { data } = await axios.post(
-      'https://chat.hackaigc.com/api/chat',
-      payload,
-      {
-        headers: {
-          'Authorization': `Bearer ${user_id}`,
-          'Referer': 'https://chat.hackaigc.com/'
-        },
-        timeout: 30000
-      }
-    );
+    // ✅ Pakai fetch bawaan Node.js, tidak perlu axios
+    const response = await fetch('https://chat.hackaigc.com/api/chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${user_id}`,
+        'Referer': 'https://chat.hackaigc.com/'
+      },
+      body: JSON.stringify(payload)
+    });
 
+    const data = await response.json();
     const reply = data?.choices?.[0]?.message?.content || data;
 
     return res.status(200).json({
@@ -68,7 +66,7 @@ export default async function handler(req, res) {
   } catch (e) {
     return res.status(500).json({
       success: false,
-      error: e.response?.data || e.message
+      error: e.message
     });
   }
 }
