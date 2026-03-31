@@ -1,9 +1,7 @@
 import axios from 'axios'
-import { v4 as uuidv4 } from 'uuid'
 
 export default async function handler(req, res) {
 
-  // 🔥 handle GET biar gak crash
   if (req.method === 'GET') {
     return res.status(200).json({
       status: "API RUNNING",
@@ -18,7 +16,8 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'ask is required' })
     }
 
-    const user_id = 'guest_' + uuidv4()
+    // ✅ Replace uuid with crypto (built-in, no import needed)
+    const user_id = 'guest_' + crypto.randomUUID()
 
     const { data } = await axios.post(
       'https://chat.hackaigc.com/api/chat',
@@ -32,7 +31,7 @@ export default async function handler(req, res) {
       },
       {
         headers: {
-          "Authorization": `Bearer ${user_id}`, // 🔥 FIX
+          "Authorization": `Bearer ${user_id}`,
           "Referer": "https://chat.hackaigc.com/"
         }
       }
@@ -41,7 +40,7 @@ export default async function handler(req, res) {
     return res.status(200).json(data)
 
   } catch (e) {
-    console.log(e.response?.data || e.message) // 🔥 debug
+    console.error(e.response?.data || e.message)
 
     return res.status(500).json({
       error: "FAILED",
