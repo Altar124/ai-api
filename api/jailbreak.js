@@ -3,19 +3,21 @@ import { v4 } from 'uuid';
 
 export default async function handler(req, res) {
 
-  // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  // GET - cek status API
   if (req.method === 'GET') {
     return res.status(200).json({
       status: '✅ API RUNNING',
-      endpoint: 'POST /api/chat',
-      body: { ask: 'string', model: 'string (optional)' }
+      endpoint: 'POST /api/jailbreak',
+      body: {
+        ask: 'string (required)',
+        model: 'string (optional)',
+        temperature: 'number (optional)'
+      }
     });
   }
 
@@ -27,7 +29,7 @@ export default async function handler(req, res) {
     const { ask, model = 'gpt-4o', temperature = 0.8 } = req.body || {};
 
     if (!ask) {
-      return res.status(400).json({ error: '❌ ask is required' });
+      return res.status(400).json({ error: '❌ Parameter ask wajib diisi' });
     }
 
     const user_id = 'guest_' + v4();
@@ -55,10 +57,12 @@ export default async function handler(req, res) {
       }
     );
 
+    const reply = data?.choices?.[0]?.message?.content || data;
+
     return res.status(200).json({
       success: true,
       model,
-      reply: data?.choices?.[0]?.message?.content || data
+      reply
     });
 
   } catch (e) {
